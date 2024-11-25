@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule ^(.*)$ app_ws/index.php?/$1 [L]
+
+RewriteCond %{HTTP:Authorization} ^(.*)
+
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
