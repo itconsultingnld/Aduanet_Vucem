@@ -66,4 +66,18 @@ async function eliminarPaginas() {
     downloadLink.download = "PDF_modificado.pdf";
     downloadLink.style.display = "block";
     downloadLink.textContent = "Descargar PDF Modificado";
+
+    var reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onload = async function (event) {
+        pdfDoc = await PDFLib.PDFDocument.load(event.target.result);
+    };
+    // reader.readAsArrayBuffer(blob);
+    reader.onloadend = function () {
+        var base64data = reader.result;
+        // console.log(base64data);
+
+        const pdfViewer = document.getElementById('pdfViewer');
+        pdfViewer.innerHTML = `<embed src="${base64data}" type="application/pdf" width="100%" height="500px" />`;
+    }
 }
