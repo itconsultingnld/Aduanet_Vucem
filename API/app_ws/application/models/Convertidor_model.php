@@ -54,6 +54,7 @@ class Convertidor_model extends CI_Model
             unlink($temp_name); // Delete the temporary file
             unlink($file); // Elimina el archivo original
         } catch (Exception) {
+            echo '{"mensaje":"Error al procesar"}';
         }
     }
 }
