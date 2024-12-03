@@ -10,11 +10,9 @@ class Convertidor_model extends CI_Model
     public function convertir($archivo)
     {
         try {
-            $RUTA_BASE = 'C:/xampp/htdocs/Aduanet_Vucem/';
-
             $tiempo = str_replace('.', '', abs(microtime(true)));
 
-            $file = $RUTA_BASE . 'tmp/base_' . $tiempo . '.pdf';
+            $file = RUTA_BASE . 'tmp/base_' . $tiempo . '.pdf';
 
             $archivo = str_replace('data:application/pdf;base64,', '', $archivo);
             $archivo = str_replace(' ', '+', $archivo);
@@ -45,7 +43,7 @@ class Convertidor_model extends CI_Model
             } */
 
             // First we create a temporary file and write the pdf to it
-            $temp_name = $RUTA_BASE . 'tmp/output_' . $tiempo . '.pdf';
+            $temp_name = RUTA_BASE . 'tmp/output_' . $tiempo . '.pdf';
             /* $pdf->writeImages($temp_name, true); // adjoin is true
 
             header('Content-type: application/pdf');
