@@ -19,6 +19,15 @@ class Convertidor_model extends CI_Model
             $archivo = base64_decode($archivo);
             file_put_contents($file, $archivo);
 
+            $handle = fopen($file, "r");
+            $contents = fread($handle, filesize($file));
+            fclose($handle);
+
+            if (stristr($contents, "/Encrypt")) {
+                unlink($file); // Elimina el archivo original
+                throw new InvalidArgumentException('El archivo no puede tener contraseña');
+            }
+
             /* $imagen = new Imagick($file);
 
             $noOfPagesInPDF = $imagen->getNumberImages();
@@ -62,6 +71,8 @@ class Convertidor_model extends CI_Model
 
             unlink($temp_name); // Delete the temporary file
             unlink($file); // Elimina el archivo original
+        } catch (InvalidArgumentException $ex) {
+            echo '{"mensaje":"' . $ex->getMessage() . '"}';
         } catch (Exception) {
             echo '{"mensaje":"Error al procesar"}';
         }
