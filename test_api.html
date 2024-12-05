@@ -25,19 +25,30 @@
     <div>
         <input type="file" id="fileInput" accept="application/pdf" />
         <button onclick="cargarPDF()">Cargar PDF</button>
-        <button onclick="convertirVucem()">CONVERTIDOR VUCEM</button>
+        <button id="convertirVucem" onclick="convertirVucem()">CONVERTIDOR VUCEM</button>
     </div>
     <div style="margin-top: 10px;">
         <label for="pagesToRemove">Páginas a eliminar (separadas por comas):</label>
         <input type="text" id="pagesToRemove" placeholder="Ej. 1,3,5" />
         <button id="pagesToRemoveButton">Eliminar Páginas</button>
-        <button onclick="enviarBase64Modif()">Enviar Base64 Modificado</button>
+        <button id="enviarBase64" onclick="enviarBase64Modif()">Enviar Base64 Modificado</button>
     </div>
     <!-- Contenedor para mostrar el PDF -->
     <div style="margin-top: 10px;" style="width: 70%; margin: 0 auto; padding-left: 30%;" class="row">
         <div id="pdfViewer1" class="col-12"></div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="./js/pdf-lib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
     <script>
+        $(document).ready(function () {
+            $('#pagesToRemove').prop('disabled', true);
+            $('#pagesToRemoveButton').prop('disabled', true);
+            $('#enviarBase64').prop('disabled', true);
+        });
         // var 'application/pdf' = 'application/pdf';
         let pdfDoc; // Almacena el documento PDF cargado
         let base64data;
@@ -98,10 +109,18 @@
                 base64ToOut = request.response; // base64 from PHP API
                 fromBack = true;
                 console.log("nuevo base64FromPHP", "data:application/pdf;base64," + request.response);
+                newBlob = base64ToBlob(base64ToOut);
+                $('#convertirVucem').prop('disabled', true);
+                $('#pagesToRemove').prop('disabled', false);
+                $('#pagesToRemoveButton').prop('disabled', false);
+                $('#enviarBase64').prop('disabled', false);
             };
         }
 
         function loadPdf(blob) {
+            blobToBase64(blob).then(base64 => { base64ToOut = base64 });
+            console.log("base64 actualizado del actualizado: ", base64ToOut);
+
             const pdfUrl = URL.createObjectURL(blob);
             const pdfViewer = document.getElementById('pdfViewer1');
             pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="500px" />`
@@ -131,6 +150,7 @@
 
         // Manejador para eliminar páginas
         document.getElementById('pagesToRemoveButton').addEventListener('click', async () => {
+            var blobParcial;
             if (!base64ToOut) {
                 alert('Carga un archivo PDF y conviertelo a documento VUCEM para poder eliminar páginas.');
                 return;
@@ -148,14 +168,16 @@
                 return;
             }
 
-            var blobParcial = base64ToBlob(base64ToOut);
+            blobParcial = base64ToBlob(base64ToOut);
             // Eliminar páginas y actualizar el visor
             newBlob = await deletePagesFromPdf(blobParcial, pagesToDelete);
             loadPdf(newBlob);
             fromBack = false;
+            $('#pagesToRemove').val('');
         });
 
         function enviarBase64Modif() {
+            console.log("newBlob: ", newBlob);
             if (newBlob === undefined) {
                 return alert('Para enviar, necesita seguir el proceso anterior...')
             }
@@ -208,14 +230,7 @@
             // Crear el Blob a partir de los datos binarios
             return new Blob(byteArrays, { type: mimetype });
         }
-
     </script>
-    <script src="./js/pdf-lib.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 </body>
 
 </html>
