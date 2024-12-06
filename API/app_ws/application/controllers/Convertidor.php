@@ -18,10 +18,22 @@ class Convertidor extends REST_Controller
         $this->load->model("Convertidor_model");
     }
 
-    /* GET - Listado de Convertidor */
+    /* POST - Convertidor a Vucem */
     public function convertir_post()
     {
         $archivo = $this->post('archivo');
         $this->Convertidor_model->convertir($archivo);
+    }
+
+    /* POST - Revisar tamaño de archivo */
+    public function revisar_tamanio_post()
+    {
+        $archivo = $this->post('archivo');
+        $respuesta = $this->Convertidor_model->revisar_tamanio($archivo);
+        if ($respuesta["error"] === false) {
+            $this->response($respuesta, 200);
+        } else {
+            $this->response($respuesta, 400);
+        }
     }
 }

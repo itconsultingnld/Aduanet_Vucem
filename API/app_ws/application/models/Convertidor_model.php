@@ -9,11 +9,12 @@ class Convertidor_model extends CI_Model
 
     public function convertir($archivo)
     {
+        $tiempo = str_replace('.', '', abs(microtime(true)));
+
+        $file = RUTA_BASE . 'tmp/base_' . $tiempo . '.pdf';
+        $temp_name = RUTA_BASE . 'tmp/output_' . $tiempo . '.pdf';
+
         try {
-            $tiempo = str_replace('.', '', abs(microtime(true)));
-
-            $file = RUTA_BASE . 'tmp/base_' . $tiempo . '.pdf';
-
             $archivo = str_replace('data:application/pdf;base64,', '', $archivo);
             $archivo = str_replace(' ', '+', $archivo);
             $archivo = base64_decode($archivo);
@@ -51,8 +52,6 @@ class Convertidor_model extends CI_Model
                 }
             } */
 
-            // First we create a temporary file and write the pdf to it
-            $temp_name = RUTA_BASE . 'tmp/output_' . $tiempo . '.pdf';
             /* $pdf->writeImages($temp_name, true); // adjoin is true
 
             header('Content-type: application/pdf');
@@ -68,13 +67,48 @@ class Convertidor_model extends CI_Model
 
             // Codificamos en Base64
             echo base64_encode($pdfData);
-
-            unlink($temp_name); // Delete the temporary file
-            unlink($file); // Elimina el archivo original
         } catch (InvalidArgumentException $ex) {
             echo '{"mensaje":"' . $ex->getMessage() . '"}';
         } catch (Exception) {
             echo '{"mensaje":"Error al procesar"}';
+        } finally {
+            if (file_exists($temp_name)) {
+                unlink($temp_name); // Delete the temporary file
+            }
+            if (file_exists($file)) {
+                unlink($file); // Elimina el archivo original
+            }
         }
+    }
+
+    public function revisar_tamanio($archivo)
+    {
+        $tiempo = str_replace('.', '', abs(microtime(true)));
+
+        $file = RUTA_BASE . 'tmp/tamanio_' . $tiempo . '.pdf';
+
+        try {
+            $archivo = str_replace('data:application/pdf;base64,', '', $archivo);
+            $archivo = str_replace(' ', '+', $archivo);
+            $archivo = base64_decode($archivo);
+            file_put_contents($file, $archivo);
+
+            $tamanio = filesize($file);
+
+            $respuesta = array(
+                'error' => false,
+                'is_heavy' => $tamanio >= 3 * 1024 * 1024,
+            );
+        } catch (Exception $ex) {
+            $respuesta = array(
+                'error' => false,
+                'mensaje' => $ex->getMessage(),
+            );
+        } finally {
+            if (file_exists($file)) {
+                unlink($file); // Elimina el archivo original
+            }
+        }
+        return $respuesta;
     }
 }
