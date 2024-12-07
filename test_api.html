@@ -183,11 +183,23 @@
             }
             if (!fromBack) {
                 blobToBase64(newBlob)
-                    .then(base64 => console.log("base64 modificado: ", base64))
+                    .then(base64 => base64ToOut = base64)
                     .catch(error => console.error("Error:", error));
                 return;
             }
-            console.log("base 64 to out: ", base64ToOut);
+            let datos = { "archivo": base64ToOut };
+            var request = new XMLHttpRequest();
+            request.open('POST', "http://localhost/Aduanet_Vucem/API/app_ws/Convertidor/revisar_tamanio", true);
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            // Load the data directly as a Blob.
+            // request.responseType = 'blob';
+            request.send(JSON.stringify(datos));
+            request.onload = async function () {
+                if (request.response.is_heavy) {
+                    return alert('Archivo no compatible. El archivo no debe pesar mas de 3 MB');
+                }
+                console.log("base 64 to out: ", base64ToOut);
+            };
         }
 
         function blobToBase64(blob) {
