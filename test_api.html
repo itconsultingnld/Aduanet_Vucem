@@ -106,17 +106,20 @@
                     var resp = JSON.parse(request.response);
                     alert(resp.mensaje);
                 } else {
-                // Mostrar el PDF en el visor (solo como información)
-                const pdfViewer = document.getElementById('pdfViewer1');
-                pdfViewer.innerHTML = `<embed src="data:application/pdf;base64,${request.response}" type="application/pdf" width="100%" height="500px" />`;
-                base64ToOut = request.response; // base64 from PHP API
-                fromBack = true;
-                console.log("nuevo base64FromPHP", "data:application/pdf;base64," + request.response);
-                newBlob = base64ToBlob(base64ToOut);
-                $('#convertirVucem').prop('disabled', true);
-                $('#pagesToRemove').prop('disabled', false);
-                $('#pagesToRemoveButton').prop('disabled', false);
-                $('#enviarBase64').prop('disabled', false);
+                    let blobProv = base64ToBlob(request.response);
+                    console.log('aber blob', blobProv);
+                    const pdfUrl = URL.createObjectURL(blobProv)
+                    // Mostrar el PDF en el visor (solo como información)
+                    var pdfViewer = document.getElementById('pdfViewer1');
+                    pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="500px" />`;
+                    base64ToOut = request.response; // base64 from PHP API
+                    fromBack = true;
+                    console.log("nuevo base64FromPHP", "data:application/pdf;base64," + request.response);
+                    newBlob = base64ToBlob(base64ToOut);
+                    $('#convertirVucem').prop('disabled', true);
+                    $('#pagesToRemove').prop('disabled', false);
+                    $('#pagesToRemoveButton').prop('disabled', false);
+                    $('#enviarBase64').prop('disabled', false);
                 }
             };
         }
@@ -185,12 +188,6 @@
             if (newBlob === undefined) {
                 return alert('Para enviar, necesita seguir el proceso anterior...')
             }
-            if (!fromBack) {
-                blobToBase64(newBlob)
-                    .then(base64 => base64ToOut = base64)
-                    .catch(error => console.error("Error:", error));
-                return;
-            }
             let datos = { "archivo": base64ToOut };
             var request = new XMLHttpRequest();
             request.open('POST', "http://localhost/Aduanet_Vucem/API/app_ws/Convertidor/revisar_tamanio", true);
@@ -199,7 +196,8 @@
             // request.responseType = 'blob';
             request.send(JSON.stringify(datos));
             request.onload = async function () {
-                if (request.response.is_heavy) {
+                var resp = JSON.parse(request.response);
+                if (resp.is_heavy) {
                     return alert('Archivo no compatible. El archivo no debe pesar mas de 3 MB');
                 }
                 console.log("base 64 to out: ", base64ToOut);
@@ -225,7 +223,7 @@
             });
         }
 
-        function base64ToBlob(base64, mimetype = '') {
+        function base64ToBlob(base64, mimetype = 'application/pdf') {
             // Decodificar la cadena Base64
             const byteCharacters = atob(base64);
 
