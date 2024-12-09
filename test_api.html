@@ -67,7 +67,7 @@
             const arrayBuffer = await archivo.arrayBuffer();
 
             // Cargar el PDF en pdf-lib
-            pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+            pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
             // Generar el nuevo PDF y descargarlo
             const pdfBytes = await pdfDoc.save();
@@ -76,7 +76,7 @@
             var reader = new FileReader();
             reader.readAsDataURL(blob);
             reader.onload = async function (event) {
-                pdfDoc = await PDFLib.PDFDocument.load(event.target.result);
+                pdfDoc = await PDFLib.PDFDocument.load(event.target.result, { ignoreEncryption: true });
             };
             // reader.readAsArrayBuffer(blob);
             reader.onloadend = function () {
@@ -102,7 +102,10 @@
             // request.responseType = 'blob';
             request.send(JSON.stringify(datos));
             request.onload = async function () {
-
+                if (request.response.startsWith('{')) {
+                    var resp = JSON.parse(request.response);
+                    alert(resp.mensaje);
+                } else {
                 // Mostrar el PDF en el visor (solo como información)
                 const pdfViewer = document.getElementById('pdfViewer1');
                 pdfViewer.innerHTML = `<embed src="data:application/pdf;base64,${request.response}" type="application/pdf" width="100%" height="500px" />`;
@@ -114,6 +117,7 @@
                 $('#pagesToRemove').prop('disabled', false);
                 $('#pagesToRemoveButton').prop('disabled', false);
                 $('#enviarBase64').prop('disabled', false);
+                }
             };
         }
 
