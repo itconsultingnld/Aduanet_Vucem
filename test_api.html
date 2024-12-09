@@ -73,19 +73,17 @@
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 
+            const pdfUrl = URL.createObjectURL(blob);
+            // Mostrar el PDF en el visor (solo como información)
+            const pdfViewer = document.getElementById('pdfViewer1');
+            pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="500px" />`;
+
             var reader = new FileReader();
             reader.readAsDataURL(blob);
-            reader.onload = async function (event) {
-                pdfDoc = await PDFLib.PDFDocument.load(event.target.result, { ignoreEncryption: true });
-            };
-            // reader.readAsArrayBuffer(blob);
+
             reader.onloadend = function () {
                 base64data = reader.result;
                 console.log(base64data);
-
-                // Mostrar el PDF en el visor (solo como información)
-                const pdfViewer = document.getElementById('pdfViewer1');
-                pdfViewer.innerHTML = `<embed src="${base64data}" type="application/pdf" width="100%" height="500px" />`;
             }
         }
 
