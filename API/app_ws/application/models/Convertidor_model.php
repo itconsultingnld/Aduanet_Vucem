@@ -59,7 +59,7 @@ class Convertidor_model extends CI_Model
             echo $pdf->getImagesBlob();
             $pdf->destroy(); */
 
-            $command = "gs -sDEVICE=pdfwrite -sProcessColorModel=DeviceGray -sColorConversionStrategy=Gray -dUseFastColor -o -dGrayLevels=8 -dNOPAUSE -dBATCH -dSAFER -r300 -sOutputFile=" . $temp_name . " " . $file;
+            $command = "gs -sDEVICE=pdfwrite -sProcessColorModel=DeviceGray -sColorConversionStrategy=Gray -dUseFastColor -o -dGrayLevels=8 -dNOPAUSE -dBATCH -dSAFER -r300 -dNOINTERACTIVEFORMS  -dCompatibilityLevel=1.4 -dNOSCRIPTING -sOutputFile=" . $temp_name . " " . $file;
             shell_exec($command);
 
             // Leemos el archivo PDF
