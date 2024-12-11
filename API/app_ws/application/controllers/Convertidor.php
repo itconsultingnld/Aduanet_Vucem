@@ -13,8 +13,6 @@ class Convertidor extends REST_Controller
     public function __construct()
     {
         parent::__construct();
-        /* Se agregar la conexion a la base de datos a toda la clase */
-        /* $this->load->database(); */
         $this->load->model("Convertidor_model");
     }
 
