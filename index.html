@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
 </head>
 <style>
     body {
         background-color: black;
         color: white;
+        margin: 5px;
+        font-family: Arial, Helvetica, sans-serif;
     }
 
     a {
@@ -21,24 +24,230 @@
     <div>
         <input type="file" id="fileInput" accept="application/pdf" />
         <button onclick="cargarPDF()">Cargar PDF</button>
-        <button onclick="convertirVucem()">CONVERTIDOR VUCEM</button>
+        <button id="convertirVucem" onclick="convertirVucem()">CONVERTIDOR VUCEM</button>
     </div>
-
     <div style="margin-top: 10px;">
         <label for="pagesToRemove">Páginas a eliminar (separadas por comas):</label>
         <input type="text" id="pagesToRemove" placeholder="Ej. 1,3,5" />
-        <button onclick="eliminarPaginas()">Eliminar Páginas</button>
+        <button id="pagesToRemoveButton">Eliminar Páginas</button>
+        <button id="enviarBase64" onclick="enviarBase64Modif()" style="padding: 2px 50px; margin-left: 10%;">Enviar</button>
     </div>
-
     <!-- Contenedor para mostrar el PDF -->
-    <div style="margin-top: 10px;" id="pdfViewer" style="width: 70%; margin: o auto; padding-left: 30%;">
-        <!-- Aquí se mostrará el PDF -->
+    <div style="margin-top: 10px;" style="width: 70%; margin: 0 auto; padding-left: 30%;" class="row">
+        <div id="pdfViewer1"></div>
     </div>
-
-    <a id="downloadLink" style="display:none; margin-top: 20px;">Descargar PDF Modificado</a>
-
-    <script src="./js/app.js"></script>
+    <script src="./js/jquery.min.js"></script>
     <script src="./js/pdf-lib.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#pagesToRemove').prop('disabled', true);
+            $('#pagesToRemoveButton').prop('disabled', true);
+            $('#enviarBase64').prop('disabled', true);
+
+            $('#fileInput').change(function () {
+                var inpout = $(this)[0];
+                if (inpout.files[0].size > 50 * 1048576) {
+                    alert("El archivo seleccionado sobrepasa el límite de tamaño para su procesamiento.");
+                    inpout.value = "";
+                }
+            })
+        });
+        // var 'application/pdf' = 'application/pdf';
+        let pdfDoc; // Almacena el documento PDF cargado
+        let base64data;
+        let base64ToOut;
+        let base64FromNewBlob;
+        let fromBack = false;
+        var newBlob;
+
+        async function cargarPDF() {
+            const inputFile = document.getElementById('fileInput');
+            const archivo = inputFile.files[0];
+
+            if (!archivo && !archivo.type === 'application/pdf') {
+                return alert('Por favor, selecciona un archivo PDF válido.');
+            }
+            const arrayBuffer = await archivo.arrayBuffer();
+
+            // Cargar el PDF en pdf-lib
+            pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+            // Generar el nuevo PDF y descargarlo
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+            const pdfUrl = URL.createObjectURL(blob);
+            // Mostrar el PDF en el visor (solo como información)
+            const pdfViewer = document.getElementById('pdfViewer1');
+            pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="500px" />`;
+
+            var reader = new FileReader();
+            reader.readAsDataURL(blob);
+
+            reader.onloadend = function () {
+                base64data = reader.result;
+                console.log(base64data);
+            }
+        }
+
+        function convertirVucem() {
+            if (base64data === undefined || base64data.length === 0) {
+                alert('Cargue el documento para su conversión...');
+                return;
+            }
+            let datos = { "archivo": base64data };
+            var request = new XMLHttpRequest();
+            request.open('POST', "http://localhost/Aduanet_Vucem/API/app_ws/Convertidor/convertir", true);
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            // Load the data directly as a Blob.
+            // request.responseType = 'blob';
+            request.timeout = 120000; // Set timeout to 120 seconds (120000 milliseconds) -> 2 minutes.
+            request.ontimeout = function () { alert("Tiempo de espera excedido.\n\nPosibles causas:\n• Posible desconexión de red.\n• El tamaño del archivo es muy pesado para su procesamiento.\n• Saturación del servicio."); }
+            request.send(JSON.stringify(datos));
+            request.onload = async function () {
+                if (request.response.startsWith('{')) {
+                    var resp = JSON.parse(request.response);
+                    alert(resp.mensaje);
+                } else {
+                    let blobProv = base64ToBlob(request.response);
+                    console.log('aber blob', blobProv);
+                    const pdfUrl = URL.createObjectURL(blobProv)
+                    // Mostrar el PDF en el visor (solo como información)
+                    var pdfViewer = document.getElementById('pdfViewer1');
+                    pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="500px" />`;
+                    base64ToOut = request.response; // base64 from PHP API
+                    fromBack = true;
+                    console.log("nuevo base64FromPHP", "data:application/pdf;base64," + request.response);
+                    newBlob = base64ToBlob(base64ToOut);
+                    $('#convertirVucem').prop('disabled', true);
+                    $('#pagesToRemove').prop('disabled', false);
+                    $('#pagesToRemoveButton').prop('disabled', false);
+                    $('#enviarBase64').prop('disabled', false);
+                }
+            };
+        }
+
+        function loadPdf(blob) {
+            blobToBase64(blob).then(base64 => { base64ToOut = base64 });
+            console.log("base64 actualizado del actualizado: ", base64ToOut);
+
+            const pdfUrl = URL.createObjectURL(blob);
+            const pdfViewer = document.getElementById('pdfViewer1');
+            pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="500px" />`
+        }
+
+        async function deletePagesFromPdf(blob, pagesToDelete) {
+            const arrayBuffer = await blob.arrayBuffer();
+            const pdfDoc2 = await PDFLib.PDFDocument.load(arrayBuffer);
+
+            // Convertir números de páginas a índices
+            const totalPages = pdfDoc2.getPageCount();
+            const pagesToKeep = Array.from({ length: totalPages }, (_, i) => i).filter(
+                (i) => !pagesToDelete.includes(i + 1)
+            );
+
+            // Crear un nuevo documento PDF y copiar las páginas necesarias
+            const newPdf = await PDFLib.PDFDocument.create();
+            for (const pageIndex of pagesToKeep) {
+                const [copiedPage] = await newPdf.copyPages(pdfDoc2, [pageIndex]);
+                newPdf.addPage(copiedPage);
+            }
+
+            // Guardar el PDF modificado como Blob
+            const newPdfBytes = await newPdf.save();
+            return new Blob([newPdfBytes], { type: 'application/pdf' });
+        }
+
+        // Manejador para eliminar páginas
+        document.getElementById('pagesToRemoveButton').addEventListener('click', async () => {
+            var blobParcial;
+            if (!base64ToOut) {
+                alert('Carga un archivo PDF y conviertelo a documento VUCEM para poder eliminar páginas.');
+                return;
+            }
+
+            // Obtener las páginas a eliminar del input
+            const pagesInput = document.getElementById('pagesToRemove').value;
+            const pagesToDelete = pagesInput
+                .split(',')
+                .map((p) => parseInt(p.trim()))
+                .filter((p) => !isNaN(p));
+
+            if (pagesToDelete.length === 0) {
+                alert('Por favor, ingresa números de páginas válidos.');
+                return;
+            }
+
+            blobParcial = base64ToBlob(base64ToOut);
+            // Eliminar páginas y actualizar el visor
+            newBlob = await deletePagesFromPdf(blobParcial, pagesToDelete);
+            loadPdf(newBlob);
+            fromBack = false;
+            $('#pagesToRemove').val('');
+        });
+
+        function enviarBase64Modif() {
+            console.log("newBlob: ", newBlob);
+            if (newBlob === undefined) {
+                return alert('Para enviar, necesita seguir el proceso anterior...')
+            }
+            let datos = { "archivo": base64ToOut };
+            var request = new XMLHttpRequest();
+            request.open('POST', "http://localhost/Aduanet_Vucem/API/app_ws/Convertidor/revisar_tamanio", true);
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            // Load the data directly as a Blob.
+            // request.responseType = 'blob';
+            request.send(JSON.stringify(datos));
+            request.onload = async function () {
+                var resp = JSON.parse(request.response);
+                if (resp.is_heavy) {
+                    return alert('Archivo no compatible. El archivo no debe pesar más de 3 MB');
+                }
+                console.log("base 64 to out: ", base64ToOut);
+            };
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                // Evento que se dispara cuando la lectura es exitosa
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]); // Obtenemos solo la parte base64, sin el prefijo "data:"
+                };
+
+                // Evento que se dispara si ocurre un error
+                reader.onerror = (error) => {
+                    reject(error);
+                };
+
+                // Inicia la lectura del blob como DataURL
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function base64ToBlob(base64, mimetype = 'application/pdf') {
+            // Decodificar la cadena Base64
+            const byteCharacters = atob(base64);
+
+            // Crear un array de bytes
+            const byteArrays = [];
+            for (let i = 0; i < byteCharacters.length; i += 512) {
+                const slice = byteCharacters.slice(i, i + 512);
+
+                const byteNumbers = new Array(slice.length);
+                for (let j = 0; j < slice.length; j++) {
+                    byteNumbers[j] = slice.charCodeAt(j);
+                }
+
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+
+            // Crear el Blob a partir de los datos binarios
+            return new Blob(byteArrays, { type: mimetype });
+        }
+    </script>
 </body>
 
 </html>
