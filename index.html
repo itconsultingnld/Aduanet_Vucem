@@ -30,7 +30,8 @@
         <label for="pagesToRemove">Páginas a eliminar (separadas por comas):</label>
         <input type="text" id="pagesToRemove" placeholder="Ej. 1,3,5" />
         <button id="pagesToRemoveButton">Eliminar Páginas</button>
-        <button id="enviarBase64" onclick="enviarBase64Modif()" style="padding: 2px 50px; margin-left: 10%;">Enviar</button>
+        <button id="enviarBase64" onclick="enviarBase64Modif()"
+            style="padding: 2px 50px; margin-left: 10%;">Enviar</button>
     </div>
     <!-- Contenedor para mostrar el PDF -->
     <div style="margin-top: 10px;" style="width: 70%; margin: 0 auto; padding-left: 30%;" class="row">
@@ -147,14 +148,20 @@
             );
 
             // Crear un nuevo documento PDF y copiar las páginas necesarias
-            const newPdf = await PDFLib.PDFDocument.create();
-            for (const pageIndex of pagesToKeep) {
-                const [copiedPage] = await newPdf.copyPages(pdfDoc2, [pageIndex]);
-                newPdf.addPage(copiedPage);
+            /* const newPdf = await PDFLib.PDFDocument.create(); */
+            var pag_quitadas = 1;
+            /* for (const pageIndex of pagesToKeep) { */
+            for (const pageIndex of pagesToDelete) {
+                var indice = pageIndex - pag_quitadas;
+                /* const [copiedPage] = await newPdf.copyPages(pdfDoc2, [indice]);
+                newPdf.addPage(copiedPage); */
+                pdfDoc2.removePage(indice);
+                pag_quitadas++;
             }
 
             // Guardar el PDF modificado como Blob
-            const newPdfBytes = await newPdf.save();
+            /* const newPdfBytes = await newPdf.save(); */
+            const newPdfBytes = await pdfDoc2.save();
             return new Blob([newPdfBytes], { type: 'application/pdf' });
         }
 
@@ -177,6 +184,10 @@
                 alert('Por favor, ingresa números de páginas válidos.');
                 return;
             }
+
+            pagesToDelete.sort(function (a, b) {
+                return a - b;
+            });
 
             blobParcial = base64ToBlob(base64ToOut);
             // Eliminar páginas y actualizar el visor
