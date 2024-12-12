@@ -147,20 +147,15 @@
                 (i) => !pagesToDelete.includes(i + 1)
             );
 
-            // Crear un nuevo documento PDF y copiar las páginas necesarias
-            /* const newPdf = await PDFLib.PDFDocument.create(); */
+            // Modificar el documento PDF y eliminar las páginas necesarias
             var pag_quitadas = 1;
-            /* for (const pageIndex of pagesToKeep) { */
             for (const pageIndex of pagesToDelete) {
                 var indice = pageIndex - pag_quitadas;
-                /* const [copiedPage] = await newPdf.copyPages(pdfDoc2, [indice]);
-                newPdf.addPage(copiedPage); */
                 pdfDoc2.removePage(indice);
                 pag_quitadas++;
             }
 
             // Guardar el PDF modificado como Blob
-            /* const newPdfBytes = await newPdf.save(); */
             const newPdfBytes = await pdfDoc2.save();
             return new Blob([newPdfBytes], { type: 'application/pdf' });
         }
