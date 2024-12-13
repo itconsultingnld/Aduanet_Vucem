@@ -129,8 +129,10 @@
         }
 
         function loadPdf(blob) {
-            blobToBase64(blob).then(base64 => { base64ToOut = base64 });
-            console.log("base64 actualizado del actualizado: ", base64ToOut);
+            blobToBase64(blob).then(base64 => {
+                base64ToOut = base64;
+                console.log("base64 actualizado del actualizado: ", base64ToOut);
+            });
 
             const pdfUrl = URL.createObjectURL(blob);
             const pdfViewer = document.getElementById('pdfViewer1');
@@ -147,16 +149,15 @@
                 (i) => !pagesToDelete.includes(i + 1)
             );
 
-            // Modificar el documento PDF y eliminar las páginas necesarias
-            var pag_quitadas = 1;
-            for (const pageIndex of pagesToDelete) {
-                var indice = pageIndex - pag_quitadas;
-                pdfDoc2.removePage(indice);
-                pag_quitadas++;
+            // Crear un nuevo documento PDF y copiar las páginas necesarias
+            const newPdf = await PDFLib.PDFDocument.create();
+            const copiedPages = await newPdf.copyPages(pdfDoc2, pagesToKeep);
+            for (const copiedPage of copiedPages) {
+                newPdf.addPage(copiedPage);
             }
 
             // Guardar el PDF modificado como Blob
-            const newPdfBytes = await pdfDoc2.save();
+            const newPdfBytes = await newPdf.save();
             return new Blob([newPdfBytes], { type: 'application/pdf' });
         }
 
