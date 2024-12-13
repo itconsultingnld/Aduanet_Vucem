@@ -52,31 +52,22 @@ class Convertidor_model extends CI_Model
 
     public function revisar_tamanio($archivo)
     {
-        $tiempo = str_replace('.', '', abs(microtime(true)));
-
-        $file = RUTA_BASE . 'tmp/tamanio_' . $tiempo . '.pdf';
-
         try {
-            $archivo = str_replace('data:application/pdf;base64,', '', $archivo);
-            $archivo = str_replace(' ', '+', $archivo);
-            $archivo = base64_decode($archivo);
-            file_put_contents($file, $archivo);
-
-            $tamanio = filesize($file);
+            $archivo_str = $archivo;
+            if (!str_starts_with($archivo_str, 'data:application/pdf;base64,')) {
+                $archivo = 'data:application/pdf;base64,' . $archivo_str;
+            }
+            $archivo_str_len = strlen($archivo_str);
 
             $respuesta = array(
                 'error' => false,
-                'is_heavy' => $tamanio >= 3 * 1024 * 1024,
+                'is_heavy' => $archivo_str_len >= 3 * 1024 * 1024,
             );
         } catch (Exception $ex) {
             $respuesta = array(
                 'error' => false,
                 'mensaje' => $ex->getMessage(),
             );
-        } finally {
-            if (file_exists($file)) {
-                unlink($file); // Elimina el archivo original
-            }
         }
         return $respuesta;
     }
