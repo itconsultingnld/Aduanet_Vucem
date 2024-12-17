@@ -135,7 +135,7 @@
                     alert(resp.mensaje);
                 } else {
                     let blobProv = base64ToBlob(request.response);
-                    console.log('aber blob', blobProv);
+                    console.log('blob', blobProv);
                     const pdfUrl = URL.createObjectURL(blobProv)
                     // Mostrar el PDF en el visor (solo como información)
                     var pdfViewer = document.getElementById('pdfViewer1');
@@ -155,7 +155,7 @@
         function loadPdf(blob) {
             blobToBase64(blob).then(base64 => {
                 base64ToOut = base64;
-                console.log("base64 actualizado del actualizado: ", base64ToOut);
+                console.log("base64 actualizado: ", base64ToOut);
             });
 
             const pdfUrl = URL.createObjectURL(blob);
